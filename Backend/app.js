@@ -150,5 +150,5 @@ app.get('/shorturls/:shortcode', async (req, res) => {
 
 
 app.listen(8000, () => {
-    console.log('URL Shortener Microservice running at http://localhost:8000');
+    console.log('Server running at http://localhost:8000');
 });
