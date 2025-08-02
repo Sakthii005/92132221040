@@ -3,10 +3,10 @@ const app = express();
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 
-// In-memory DB
+
 const urlDB = {};
 
-// === External Logger Function ===
+
 async function logToAffordmed(stack, level, packageName, message) {
     const logData = {
         stack: stack.toLowerCase(),
@@ -30,14 +30,14 @@ async function logToAffordmed(stack, level, packageName, message) {
             console.error('Failed to send log:', response.statusText);
         } else {
             const data = await response.json();
-            console.log('📤 Log sent:', data);
+            console.log('Log sent:', data);
         }
     } catch (error) {
-        console.error('🛑 Logging error:', error.message);
+        console.error('Logging error:', error.message);
     }
 }
 
-// === Mandatory Logging Middleware ===
+
 app.use(async (req, res, next) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
@@ -45,32 +45,32 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// Body parser
+
 app.use(express.json());
 
-// === Helper: Generate Shortcode ===
+
 function generateShortcode(length = 6) {
     return crypto.randomBytes(length).toString('base64url').slice(0, length);
 }
 
-// === POST /shorturls ===
+
 app.post('/shorturls', async (req, res) => {
     const { url, validity = 30, shortcode } = req.body;
 
-    // Validate URL
+
     if (!url || !/^https?:\/\/.+/.test(url)) {
         await logToAffordmed("backend", "error", "validator", "Invalid URL format");
         return res.status(400).json({ error: "Invalid URL format" });
     }
 
-    // Validate validity
+
     const minutes = parseInt(validity);
     if (isNaN(minutes) || minutes <= 0) {
         await logToAffordmed("backend", "error", "validator", "Invalid validity value");
         return res.status(400).json({ error: "Validity must be a positive integer" });
     }
 
-    // Handle shortcode
+
     let finalCode = shortcode || generateShortcode();
     if (urlDB[finalCode]) {
         await logToAffordmed("backend", "error", "handler", "Shortcode already exists");
@@ -97,7 +97,7 @@ app.post('/shorturls', async (req, res) => {
     });
 });
 
-// === GET /:shortcode ===
+
 app.get('/:shortcode', async (req, res) => {
     const code = req.params.shortcode;
     const data = urlDB[code];
@@ -115,14 +115,14 @@ app.get('/:shortcode', async (req, res) => {
     data.clicks.push({
         timestamp: new Date(),
         referrer: req.get('Referer') || 'unknown',
-        location: 'Simulated India' // mock
+        location: 'Simulated India'
     });
 
     await logToAffordmed("backend", "info", "handler", `Redirecting from shortcode: ${code}`);
     res.redirect(data.originalUrl);
 });
 
-// === GET /shorturls/:shortcode ===
+
 app.get('/shorturls/:shortcode', async (req, res) => {
     const code = req.params.shortcode;
     const data = urlDB[code];
@@ -148,7 +148,7 @@ app.get('/shorturls/:shortcode', async (req, res) => {
     res.status(200).json(stats);
 });
 
-// === Start Server ===
+
 app.listen(8000, () => {
-    console.log('✅ URL Shortener Microservice running at http://localhost:8000');
+    console.log('URL Shortener Microservice running at http://localhost:8000');
 });
